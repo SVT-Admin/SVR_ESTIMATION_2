@@ -14,13 +14,28 @@
         <h1>SRI VINAYAGA RINGS</h1>
     </header>
     <div class="container">
-        <nav>
-            <button onclick="showSection('brands')">Brands</button>
-            <button onclick="showSection('products')">Products</button>
-            <button onclick="showSection('billing')">Estimation</button>
-            <button onclick="showSection('reports')">Reports</button>
-            <button onclick="showSection('download')">Download</button>
-            <button onclick="window.location.href='admin.html'">Admin</button>
+        <!-- Hamburger Button -->
+        <button class="hamburger" id="hamburger-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Navigation Overlay -->
+        <div class="nav-overlay" id="nav-overlay"></div>
+
+        <!-- Navigation Sidebar -->
+        <nav class="nav-sidebar" id="nav-sidebar">
+            <ul>
+                <li><a href="#" onclick="showSection('brands'); closeNav();">Brands</a></li>
+                <li><a href="#" onclick="showSection('products'); closeNav();">Products</a></li>
+                <li><a href="#" onclick="showSection('customers'); closeNav();">Customers</a></li>
+                <li><a href="#" onclick="showSection('billing'); closeNav();">Estimation</a></li>
+                <li><a href="#" onclick="showSection('reports'); closeNav();">Reports</a></li>
+                <li><a href="#" onclick="showSection('download'); closeNav();">Download</a></li>
+                <li><a href="#" onclick="showSection('pending-bills'); closeNav();">Pending Bills</a></li>
+                <li><a href="admin.html">Admin</a></li>
+            </ul>
         </nav>
 
         <section id="brands-section" class="section">
@@ -89,6 +104,42 @@
                     </thead>
                     <tbody id="products-table-body">
                         <!-- Products will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="customers-section" class="section" style="display:none;">
+            <h1 style="text-align: center; padding-bottom: 10px;">CUSTOMERS MANAGEMENT</h1>
+            
+            <!-- Add Customer Form -->
+            <div class="form-group">
+                <input type="text" id="customer-name-input" placeholder="Customer Name" required>
+                <input type="tel" id="customer-phone-input" placeholder="Mobile Number (10 digits)" pattern="[0-9]{10}" required>
+                <textarea id="customer-address-input" placeholder="Customer Address" rows="2" required></textarea>
+                <button class="btn btn-primary" onclick="addCustomer()">
+                    <i class="icon">+</i> Add Customer
+                </button>
+            </div>
+
+            <!-- Search Customers -->
+            <div class="form-group">
+                <input type="text" id="customer-search" placeholder="Search by name, phone, or address..." onkeyup="searchCustomers()">
+            </div>
+
+            <!-- Customers Table -->
+            <div class="table-responsive">
+                <table id="customers-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Name</th>
+                            <th style="text-align: center;">Phone</th>
+                            <th style="text-align: center;">Address</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-table-body">
+                        <!-- Customers will be dynamically added here -->
                     </tbody>
                 </table>
             </div>
@@ -173,9 +224,66 @@
                 <p>Transport Charges: ₹<span id="transport-amount">0.00</span></p>
                 <p>Extra Charges: ₹<span id="extra-amount">0.00</span></p>
                 <p class="total-amount">Grand Total: ₹<span id="bill-total-amount">0.00</span></p>
+                <div class="form-group">
+                    <input type="number" id="received-amount" placeholder="Enter Received Amount" step="0.01" onchange="updateBillTotals()">
+                    <button class="btn btn-secondary" onclick="fillFullAmount()">
+                        <i class="icon">₹</i> Full Amount
+                    </button>
+                </div>
+                <p class="balance-amount">Balance Amount: ₹<span id="balance-amount">0.00</span></p>
                 <button class="btn btn-success" onclick="generateBill()">
                     <i class="icon">✓</i> Estimate
                 </button>
+            </div>
+        </section>
+
+        <!-- Add this new section after the reports section -->
+        <section id="pending-bills-section" class="section" style="display:none;">
+            <h1 style="text-align: center; padding-bottom: 10px;">PENDING BILLS</h1>
+            
+            <div class="search-container" style="margin-bottom: 20px;">
+                <input type="text" id="pending-search" class="form-control" placeholder="Search by Bill Number, Customer Name, or Phone..." style="margin-bottom: 10px;">
+                <button class="btn btn-primary" onclick="searchPendingBills()">Search</button>
+                <button class="btn btn-secondary" onclick="loadAllPendingBills()">Show All Pending</button>
+            </div>
+
+            <!-- Pending Bills Table -->
+            <div class="table-responsive">
+                <table id="pending-bills-table" class="table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Bill No</th>
+                            <th style="text-align: center;">Date</th>
+                            <th style="text-align: center;">Customer</th>
+                            <th style="text-align: center;">Phone</th>
+                            <th style="text-align: center;">Total Amount</th>
+                            <th style="text-align: center;">Received</th>
+                            <th style="text-align: center;">Balance</th>
+                            <th style="text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-bills-table-body">
+                        <!-- Pending bills will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bill Details Modal/Section -->
+            <div id="bill-details-modal" style="display:none; margin-top: 20px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+                <div id="bill-details-content">
+                    <!-- Bill details will be loaded here -->
+                </div>
+                
+                <!-- Payment Form -->
+                <div id="payment-form" style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px;">
+                    <h4>Close Balance Payment</h4>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <label for="balance-payment-amount">Payment Amount:</label>
+                        <input type="number" id="balance-payment-amount" class="form-control" style="width: 150px;" step="0.01">
+                        <button class="btn btn-success" onclick="processBalancePayment()">Process Payment</button>
+                        <button class="btn btn-secondary" onclick="closeBillDetails()">Cancel</button>
+                    </div>
+                </div>
             </div>
         </section>
 
