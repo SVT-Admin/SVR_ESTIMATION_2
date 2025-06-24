@@ -1064,7 +1064,7 @@ async function sendTelegramMessage(message) {
     }
 
     const botToken = '7520476821:AAEjzldN9I0ACrdCIkexT2O7D5TstFjgWQw';
-    const chatId = '-1002402346984';
+    const chatId = '-4819113028';
     const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=Markdown`;
 
     try {
@@ -1214,9 +1214,9 @@ function generateProfessionalBillPDF(bill) {
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA RINGS</h1>
-            <p style="margin: 0px 0; font-size: 14px;">No. 12/281, Puthantharuvai Road</p>
-            <p style="margin: 0px 0; font-size: 14px;">Panaivilai, Thisayanvilai, 628656</p>
-            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9710812345, +91 7598721234</p>
+            <p style="margin: 0px 0; font-size: 14px;">No. 3/6, Kannagi Street</p>
+            <p style="margin: 0px 0; font-size: 14px;">Periyar Salai, Ramapuram, 600089</p>
+            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9841447494</p>
             <p style="margin: 0px 0; font-size: 14px;">Email: admin@srivinayagatraders.com</p>
         </div>
 
@@ -1923,9 +1923,9 @@ function generateBalancePaymentPDF(payment) {
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA RINGS</h1>
-            <p style="margin: 0px 0; font-size: 14px;">No. 12/281, Puthantharuvai Road</p>
-            <p style="margin: 0px 0; font-size: 14px;">Panaivilai, Thisayanvilai, 628656</p>
-            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9710812345, +91 7598721234</p>
+            <p style="margin: 0px 0; font-size: 14px;">No. 3/6, Kannagi Street</p>
+            <p style="margin: 0px 0; font-size: 14px;">Periyar Salai, Ramapuram, 600089</p>
+            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9841447494</p>
             <p style="margin: 0px 0; font-size: 14px;">Email: admin@srivinayagatraders.com</p>
         </div>
 
