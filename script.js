@@ -36,7 +36,7 @@ function loadStaffDropdown() {
 }
 
 function showSection(sectionName) {
-    const sections = ['brands', 'products', 'customers', 'billing', 'reports', 'download', 'pending-bills'];
+    const sections = ['brands', 'products', 'customers', 'billing', 'reports', 'download'];
     sections.forEach(section => {
         const sectionElement = document.getElementById(`${section}-section`);
         sectionElement.style.display = section === sectionName ? 'block' : 'none';
@@ -47,8 +47,34 @@ function showSection(sectionName) {
     if (sectionName === 'customers') loadCustomersList();
     if (sectionName === 'billing') loadBrandsList();
     if (sectionName === 'reports') generateReport();
-    if (sectionName === 'pending-bills') loadAllPendingBills();
 }
+
+const hamburger = document.getElementById('hamburger-btn');
+const navSidebar = document.getElementById('nav-sidebar');
+const navOverlay = document.getElementById('nav-overlay');
+
+function toggleNav() {
+    hamburger.classList.toggle('active');
+    navSidebar.classList.toggle('active');
+    navOverlay.classList.toggle('active');
+}
+
+function closeNav() {
+    hamburger.classList.remove('active');
+    navSidebar.classList.remove('active');
+    navOverlay.classList.remove('active');
+}
+
+// Event listeners
+hamburger.addEventListener('click', toggleNav);
+navOverlay.addEventListener('click', closeNav);
+
+// Close nav when pressing Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeNav();
+    }
+});
 
 function addCustomer() {
     const customerName = document.getElementById('customer-name-input').value.trim();
@@ -281,7 +307,6 @@ window.onload = function() {
     showSection('billing');
     loadBrandsList();
     loadProductsList('');
-    loadCustomersList();
     generateReport();
     checkAndSendPendingMessages();
     
@@ -294,34 +319,6 @@ window.onload = function() {
         toggleBrandBtn.addEventListener('click', toggleBrandInput);
     }
 };
-
-// Hamburger Navigation JavaScript
-const hamburger = document.getElementById('hamburger-btn');
-const navSidebar = document.getElementById('nav-sidebar');
-const navOverlay = document.getElementById('nav-overlay');
-
-function toggleNav() {
-    hamburger.classList.toggle('active');
-    navSidebar.classList.toggle('active');
-    navOverlay.classList.toggle('active');
-}
-
-function closeNav() {
-    hamburger.classList.remove('active');
-    navSidebar.classList.remove('active');
-    navOverlay.classList.remove('active');
-}
-
-// Event listeners
-hamburger.addEventListener('click', toggleNav);
-navOverlay.addEventListener('click', closeNav);
-
-// Close nav when pressing Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeNav();
-    }
-});
 
 let isManualBrand = false;
 let isManualProduct = false;
@@ -950,12 +947,6 @@ function updateBillItemsTable() {
     updateBillTotals(subtotal);
 }
 
-function fillFullAmount() {
-    const grandTotal = parseFloat(document.getElementById('bill-total-amount').textContent) || 0;
-    document.getElementById('received-amount').value = grandTotal.toFixed(2);
-    updateBillTotals();
-}
-
 function updateBillTotals(subtotal = null) {
     if (subtotal === null) {
         subtotal = currentBillItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
@@ -963,16 +954,13 @@ function updateBillTotals(subtotal = null) {
 
     const transportCharges = parseFloat(document.getElementById('transport-charges').value) || 0;
     const extraCharges = parseFloat(document.getElementById('extra-charges').value) || 0;
-    const receivedAmount = parseFloat(document.getElementById('received-amount').value) || 0;
     
     const grandTotal = subtotal + transportCharges + extraCharges;
-    const balanceAmount = grandTotal - receivedAmount;
 
     document.getElementById('bill-subtotal').textContent = subtotal.toFixed(2);
     document.getElementById('transport-amount').textContent = transportCharges.toFixed(2);
     document.getElementById('extra-amount').textContent = extraCharges.toFixed(2);
     document.getElementById('bill-total-amount').textContent = grandTotal.toFixed(2);
-    document.getElementById('balance-amount').textContent = balanceAmount.toFixed(2);
 }
 
 function removeFromBill(index) {
@@ -1012,11 +1000,8 @@ function formatBillDetailsForTelegram(bill) {
     message += `\n*ESTIMATE SUMMARY*\n`;
     message += `Subtotal: ₹${bill.subtotal.toFixed(2)}\n`;
     if (bill.transportCharges) message += `Transport: ₹${bill.transportCharges.toFixed(2)}\n`;
-    if (bill.extraCharges) message += `Extra Charges: ₹${bill.extraCharges.toFixed(2)}\n`;
-    message += `*TOTAL AMOUNT: ₹${bill.totalAmount.toFixed(2)}*\n`;
-    message += `Received Amount: ₹${bill.receivedAmount.toFixed(2)}\n`;
-    message += `*BALANCE AMOUNT: ₹${bill.balanceAmount.toFixed(2)}*\n`;
-    message += `*Payment Status: ${bill.status}*`;
+    if (bill.extraCharges) message += `Old Bill Balance: ₹${bill.extraCharges.toFixed(2)}\n`;
+    message += `*TOTAL AMOUNT: ₹${bill.totalAmount.toFixed(2)}*`;
 
     return encodeURIComponent(message);
 }
@@ -1137,10 +1122,6 @@ function generateBill() {
     
     const grandTotal = subtotal + transportCharges + extraCharges;
 
-    // Replace this part in generateBill function:
-    const receivedAmount = parseFloat(document.getElementById('received-amount').value) || 0;
-    const balanceAmount = grandTotal - receivedAmount;
-
     const bill = {
         id: Date.now(),
         billNumber: billNumber,
@@ -1155,9 +1136,7 @@ function generateBill() {
         transportCharges: transportCharges,
         extraCharges: extraCharges,
         totalAmount: grandTotal,
-        receivedAmount: receivedAmount,
-        balanceAmount: balanceAmount,
-        status: balanceAmount > 0 ? 'PENDING' : 'PAID'
+        status: 'ACTIVE'
     };
 
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
@@ -1176,7 +1155,6 @@ function generateBill() {
     document.getElementById('staff-select').value = '';
     document.getElementById('transport-charges').value = '';
     document.getElementById('extra-charges').value = '';
-    document.getElementById('received-amount').value = '';
 
     updateBillItemsTable();
 
@@ -1197,9 +1175,7 @@ function cancelBill(billId) {
         const cancelMessage = `❌ *ESTIMATE CANCELLED*\n\n` +
             `Estimate No: *${bills[billIndex].billNumber}*\n` +
             `Customer: ${bills[billIndex].customer.name}\n` +
-            `Total Amount: ₹${bills[billIndex].totalAmount.toFixed(2)}\n` +
-            `Received Amount: ₹${bills[billIndex].receivedAmount.toFixed(2)}\n` +
-            `BALANCE AMOUNT: ₹${bills[billIndex].balanceAmount.toFixed(2)}\n` +
+            `Amount: ₹${bills[billIndex].totalAmount.toFixed(2)}\n` +
             `Cancelled on: ${new Date().toLocaleString()}`;
 
         sendTelegramMessage(encodeURIComponent(cancelMessage));
@@ -1214,9 +1190,9 @@ function generateProfessionalBillPDF(bill) {
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA RINGS</h1>
-            <p style="margin: 0px 0; font-size: 14px;">No. 3/6, Kannagi Street</p>
-            <p style="margin: 0px 0; font-size: 14px;">Periyar Salai, Ramapuram, 600089</p>
-            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9841447494</p>
+            <p style="margin: 0px 0; font-size: 14px;">No. 12/281, Puthantharuvai Road</p>
+            <p style="margin: 0px 0; font-size: 14px;">Panaivilai, Thisayanvilai, 628656</p>
+            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9710812345, +91 7598721234</p>
             <p style="margin: 0px 0; font-size: 14px;">Email: admin@srivinayagatraders.com</p>
         </div>
 
@@ -1287,24 +1263,12 @@ function generateProfessionalBillPDF(bill) {
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${(bill.transportCharges || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Extra Charges</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Old Bill Balance</strong></td>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${(bill.extraCharges || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Total Amount</strong></td>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>₹${bill.totalAmount.toFixed(2)}</strong></td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Received Amount</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${bill.receivedAmount.toFixed(2)}</td>
-                </tr>
-                <tr style="background-color: ${bill.balanceAmount > 0 ? '#ffebee' : '#e8f5e8'};">
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Balance Amount</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>₹${bill.balanceAmount.toFixed(2)}</strong></td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Payment Status</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>${bill.status}</strong></td>
                 </tr>
             </table>
         </div>
@@ -1368,17 +1332,12 @@ function generateReport() {
     let filteredBills = getFilteredBills(bills, reportType, startDate, endDate);
     filteredBills.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    const filteredActiveBills = filteredBills.filter(bill =>
-        ['ACTIVE', 'PAID', 'PENDING'].includes(bill.status)
-    );
-
-    const originalBills = filteredActiveBills.filter(bill => bill.type !== 'BALANCE_PAYMENT');
-    const balancePayments = filteredActiveBills.filter(bill => bill.type === 'BALANCE_PAYMENT');
-
-    const summaryTotals = originalBills.reduce((acc, bill) => ({
+    // Calculate summary for filtered ACTIVE bills only
+    const filteredActiveBills = filteredBills.filter(bill => bill.status === 'ACTIVE');
+    const summaryTotals = filteredActiveBills.reduce((acc, bill) => ({
         billCount: acc.billCount + 1,
         totalAmount: acc.totalAmount + (bill.totalAmount || 0),
-        subtotal: acc.subtotal + ((bill.totalAmount || 0) - (bill.balanceAmount || 0)), // totalAmount - balanceAmount
+        subtotal: acc.subtotal + (bill.subtotal || 0),
         transportCharges: acc.transportCharges + (bill.transportCharges || 0),
         extraCharges: acc.extraCharges + (bill.extraCharges || 0)
     }), {
@@ -1386,17 +1345,20 @@ function generateReport() {
         transportCharges: 0, extraCharges: 0
     });
 
-    const totalBillCount = summaryTotals.billCount + balancePayments.length;
+    // Get date range text for summary header
     const dateRangeText = getDateRangeText(reportType, startDate, endDate);
 
+    // Update summary section with filtered data
     document.getElementById('full-summary').innerHTML = `
         <h3>Summary - ${dateRangeText}</h3>
-        <p>Total Active Estimates: ${summaryTotals.billCount} Original Bills${balancePayments.length > 0 ? ` + ${balancePayments.length} Balance Payments` : ''}</p>
-        <p>Subtotal (Original Bills): ₹${summaryTotals.subtotal.toFixed(2)}</p>
+        <p>Total Active Estimates: ${summaryTotals.billCount}</p>
+        <p>Subtotal: ₹${summaryTotals.subtotal.toFixed(2)}</p>
         <p>Transport Charges: ₹${(summaryTotals.transportCharges || 0).toFixed(2)}</p>
-        <p>Extra Charges: ₹${(summaryTotals.extraCharges || 0).toFixed(2)}</p>
+        <p>Old Bill Balance: ₹${(summaryTotals.extraCharges || 0).toFixed(2)}</p>
+        <p>Total Sales Amount: ₹${summaryTotals.totalAmount.toFixed(2)}</p>
     `;
 
+    // Update table display
     updateReportTable(filteredBills);
 }
 
@@ -1530,24 +1492,12 @@ function getBillDetailsHTML(bill) {
                     <td style="text-align: center;"><b>₹${(bill.transportCharges || 0).toFixed(2)}</b></td>
                 </tr>
                 <tr>
-                    <td colspan="4" style="text-align: right;"><strong>Extra Charges:</strong></td>
+                    <td colspan="4" style="text-align: right;"><strong>Old Bill Balance:</strong></td>
                     <td style="text-align: center;"><b>₹${(bill.extraCharges || 0).toFixed(2)}</b></td>
                 </tr>
                 <tr class="total-amount">
                     <td colspan="4" style="text-align: right;"><strong>Total Amount:</strong></td>
                     <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
-                </tr>
-                <tr>
-                    <td colspan="4" style="text-align: right;"><strong>Received Amount:</strong></td>
-                    <td style="text-align: center;"><b>₹${(bill.receivedAmount || 0).toFixed(2)}</b></td>
-                </tr>
-                <tr style="background-color: ${(bill.balanceAmount || 0) > 0 ? '#ffebee' : '#e8f5e8'};">
-                    <td colspan="4" style="text-align: right;"><strong>Balance Amount:</strong></td>
-                    <td style="text-align: center;"><b>₹${(bill.balanceAmount || 0).toFixed(2)}</b></td>
-                </tr>
-                <tr>
-                    <td colspan="4" style="text-align: right;"><strong>Payment Status:</strong></td>
-                    <td style="text-align: center;"><span class="status-badge ${(bill.status || 'active').toLowerCase()}"><b>${bill.status || 'ACTIVE'}</b></span></td>
                 </tr>
             </tfoot>
         </table>
@@ -1568,7 +1518,6 @@ function showDownloadMessage(message, type = 'error') {
     }, 3000);
 }
 
-// Update your updateReportTable function to handle balance payment records
 function updateReportTable(filteredBills) {
     const reportTableBody = document.getElementById('report-table-body');
     reportTableBody.innerHTML = '';
@@ -1577,10 +1526,8 @@ function updateReportTable(filteredBills) {
     reportTable.querySelector('thead').innerHTML = `
         <tr>
             <th style="text-align: center;">Bill Number</th>
-            <th style="text-align: center;">Type</th>
             <th style="text-align: center;">Customer Name</th>
             <th style="text-align: center;">Total Amount</th>
-            <th style="text-align: center;">Balance Amount</th>
             <th style="text-align: center;">Status</th>
             <th style="text-align: center;">Action</th>
         </tr>
@@ -1588,28 +1535,17 @@ function updateReportTable(filteredBills) {
 
     filteredBills.forEach(bill => {
         const row = reportTableBody.insertRow();
-        const balanceAmount = bill.balanceAmount || 0;
-        const isPending = balanceAmount > 0;
-        const statusClass = bill.status === 'CANCELLED' ? 'cancelled-bill' : (isPending ? 'pending-bill' : '');
-        const billType = bill.type === 'BALANCE_PAYMENT' ? 'Balance Payment' : 'Original Bill';
+        const statusClass = bill.status === 'CANCELLED' ? 'cancelled-bill' : '';
         
         row.className = statusClass;
         row.innerHTML = `
             <td style="text-align: center;"><b>${bill.billNumber}</b></td>
-            <td style="text-align: center;"><b>${billType}</b></td>
             <td style="text-align: center;"><b>${bill.customer?.name || 'N/A'}</b></td>
             <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
-            <td style="text-align: center; ${isPending ? 'color: #d32f2f; font-weight: bold;' : ''}">
-                <b>₹${balanceAmount.toFixed(2)}</b>
-            </td>
-            <td style="text-align: center;"><span class="status-badge ${(bill.status || 'active').toLowerCase()}">${bill.status || 'ACTIVE'}</span></td>
+            <td style="text-align: center;"><span class="status-badge ${bill.status.toLowerCase()}">${bill.status}</span></td>
             <td style="text-align: center;">
-                ${bill.status === 'ACTIVE' || bill.status === 'PAID' || bill.status === 'PENDING' ? 
-                    (bill.type === 'BALANCE_PAYMENT' ? 
-                        `<button class="btn btn-primary btn-sm" onclick="generateBalancePaymentPDF(${JSON.stringify(bill).replace(/"/g, '&quot;')})">
-                            <i class="icon">↓</i> Download Receipt
-                        </button>` :
-                        `<button class="btn btn-danger" onclick="cancelBill(${bill.id})">Cancel</button>`) : 
+                ${bill.status === 'ACTIVE' ? 
+                    `<button class="btn btn-danger" onclick="cancelBill(${bill.id})">Cancel</button>` : 
                     `<span class="cancelled-date">Cancelled on ${new Date(bill.cancellationDate).toLocaleDateString()}</span>`
                 }
             </td>
@@ -1635,63 +1571,15 @@ function updateReportTable(filteredBills) {
                 detailsRow.dataset.billId = bill.id;
                 
                 const detailsCell = detailsRow.insertCell();
-                detailsCell.colSpan = 7; // Update column span to match the total number of columns
+                detailsCell.colSpan = 5; // Update column span to match the total number of columns
                 detailsCell.innerHTML = `
                     <div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
-                        ${bill.type === 'BALANCE_PAYMENT' ? getBalancePaymentDetailsHTML(bill) : getBillDetailsHTML(bill)}
+                        ${getBillDetailsHTML(bill)}
                     </div>
                 `;
             };
         }
     });
-}
-
-// Add this new function to display balance payment details
-function getBalancePaymentDetailsHTML(payment) {
-    return `
-        <h3>Balance Payment Receipt: ${payment.billNumber}</h3>
-        <p>Original Bill No.: ${payment.originalBillNumber}</p>
-        <p>Original Date: ${new Date(payment.originalBillDate).toLocaleDateString()}</p>
-        <p>Payment Date: ${new Date(payment.paymentDate).toLocaleString()}</p>
-        <div class="status-container">
-            <p><strong>Status:</strong> 
-                <span class="status-badge ${payment.status.toLowerCase()}">${payment.status}</span>
-            </p>
-        </div>
-        
-        <div class="customer-details">
-            <h4>Customer Information</h4>
-            <p><strong>Name:</strong> ${payment.customer?.name || 'N/A'}</p>
-            <p><strong>Mobile:</strong> ${payment.customer?.mobile || 'N/A'}</p>
-            <p><strong>Address:</strong> ${payment.customer?.address || 'N/A'}</p>
-        </div>
-
-        <div class="payment-summary">
-            <h4>Payment Summary</h4>
-            <table style="width: 100%; margin-top: 10px;">
-                <tr>
-                    <td style="text-align: right; padding: 5px;"><strong>Original Bill Amount:</strong></td>
-                    <td style="text-align: center; padding: 5px;"><b>₹${payment.totalAmount.toFixed(2)}</b></td>
-                </tr>
-                <tr>
-                    <td style="text-align: right; padding: 5px;"><strong>Previously Received:</strong></td>
-                    <td style="text-align: center; padding: 5px;"><b>₹${payment.originalReceivedAmount.toFixed(2)}</b></td>
-                </tr>
-                <tr style="background-color: #e8f5e8;">
-                    <td style="text-align: right; padding: 5px;"><strong>Balance Payment (Today):</strong></td>
-                    <td style="text-align: center; padding: 5px;"><b>₹${payment.balancePaymentAmount.toFixed(2)}</b></td>
-                </tr>
-                <tr>
-                    <td style="text-align: right; padding: 5px;"><strong>Total Received Amount:</strong></td>
-                    <td style="text-align: center; padding: 5px;"><b>₹${payment.receivedAmount.toFixed(2)}</b></td>
-                </tr>
-                <tr style="background-color: ${payment.balanceAmount > 0 ? '#ffebee' : '#e8f5e8'};">
-                    <td style="text-align: right; padding: 5px;"><strong>Remaining Balance:</strong></td>
-                    <td style="text-align: center; padding: 5px;"><b>₹${payment.balanceAmount.toFixed(2)}</b></td>
-                </tr>
-            </table>
-        </div>
-    `;
 }
 
 document.getElementById('report-type').addEventListener('change', function() {
@@ -1705,338 +1593,6 @@ document.getElementById('report-type').addEventListener('change', function() {
 document.querySelectorAll('#start-date, #end-date').forEach(input => {
     input.addEventListener('change', generateReport);
 });
-
-let currentPendingBill = null;
-
-function loadAllPendingBills() {
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    const pendingBills = bills.filter(bill => 
-        (bill.status === 'PENDING' || bill.status === 'ACTIVE') && 
-        (bill.balanceAmount > 0)
-    );
-    
-    displayPendingBills(pendingBills);
-}
-
-function searchPendingBills() {
-    const searchTerm = document.getElementById('pending-search').value.trim().toLowerCase();
-    
-    if (!searchTerm) {
-        loadAllPendingBills();
-        return;
-    }
-    
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    const pendingBills = bills.filter(bill => 
-        (bill.status === 'PENDING' || bill.status === 'ACTIVE') && 
-        (bill.balanceAmount > 0) &&
-        (
-            bill.billNumber.toString().includes(searchTerm) ||
-            bill.customer?.name.toLowerCase().includes(searchTerm) ||
-            bill.customer?.mobile.includes(searchTerm)
-        )
-    );
-    
-    displayPendingBills(pendingBills);
-}
-
-function displayPendingBills(bills) {
-    const tableBody = document.getElementById('pending-bills-table-body');
-    tableBody.innerHTML = '';
-    
-    if (bills.length === 0) {
-        const row = tableBody.insertRow();
-        row.innerHTML = '<td colspan="8" style="text-align: center;">No pending bills found</td>';
-        return;
-    }
-    
-    // Sort by date (newest first)
-    bills.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    bills.forEach(bill => {
-        const row = tableBody.insertRow();
-        row.innerHTML = `
-            <td style="text-align: center;"><b>${bill.billNumber}</b></td>
-            <td style="text-align: center;">${new Date(bill.date).toLocaleDateString()}</td>
-            <td style="text-align: center;">${bill.customer?.name || 'N/A'}</td>
-            <td style="text-align: center;">${bill.customer?.mobile || 'N/A'}</td>
-            <td style="text-align: center;">₹${bill.totalAmount.toFixed(2)}</td>
-            <td style="text-align: center;">₹${(bill.receivedAmount || 0).toFixed(2)}</td>
-            <td style="text-align: center; color: #d32f2f; font-weight: bold;">₹${bill.balanceAmount.toFixed(2)}</td>
-            <td style="text-align: center;">
-                <button class="btn btn-primary btn-sm" onclick="openBillForPayment(${bill.id})">
-                    Pay Balance
-                </button>
-            </td>
-        `;
-    });
-}
-
-function openBillForPayment(billId) {
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    const bill = bills.find(b => b.id === billId);
-    
-    if (!bill) {
-        alert('Bill not found');
-        return;
-    }
-    
-    currentPendingBill = bill;
-    
-    // Display bill details
-    const detailsContent = document.getElementById('bill-details-content');
-    detailsContent.innerHTML = getBillDetailsHTML(bill);
-    
-    // Set the balance amount as default payment amount
-    document.getElementById('balance-payment-amount').value = bill.balanceAmount.toFixed(2);
-    
-    // Show the modal
-    document.getElementById('bill-details-modal').style.display = 'block';
-    
-    // Scroll to the modal
-    document.getElementById('bill-details-modal').scrollIntoView({ behavior: 'smooth' });
-}
-
-function processBalancePayment() {
-    if (!currentPendingBill) {
-        alert('No bill selected');
-        return;
-    }
-    
-    const paymentAmount = parseFloat(document.getElementById('balance-payment-amount').value);
-    
-    if (!paymentAmount || paymentAmount <= 0) {
-        alert('Please enter a valid payment amount');
-        return;
-    }
-    
-    if (paymentAmount > currentPendingBill.balanceAmount) {
-        alert('Payment amount cannot exceed balance amount');
-        return;
-    }
-    
-    // Create a new balance payment record
-    const balancePayment = {
-        id: Date.now(),
-        originalBillId: currentPendingBill.id,
-        originalBillNumber: currentPendingBill.billNumber,
-        billNumber: `${currentPendingBill.billNumber}-BAL`,
-        date: new Date().toISOString(),
-        paymentDate: new Date().toISOString(),
-        customer: currentPendingBill.customer,
-        staff: currentPendingBill.staff,
-        items: currentPendingBill.items,
-        subtotal: currentPendingBill.subtotal,
-        transportCharges: currentPendingBill.transportCharges || 0,
-        extraCharges: currentPendingBill.extraCharges || 0,
-        totalAmount: currentPendingBill.totalAmount,
-        originalReceivedAmount: currentPendingBill.receivedAmount || 0,
-        balancePaymentAmount: paymentAmount,
-        receivedAmount: (currentPendingBill.receivedAmount || 0) + paymentAmount,
-        balanceAmount: currentPendingBill.balanceAmount - paymentAmount,
-        status: (currentPendingBill.balanceAmount - paymentAmount) <= 0 ? 'PAID' : 'PENDING',
-        type: 'BALANCE_PAYMENT',
-        originalBillDate: currentPendingBill.date
-    };
-    
-    // Update the original bill
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    const billIndex = bills.findIndex(b => b.id === currentPendingBill.id);
-    
-    if (billIndex !== -1) {
-        bills[billIndex].receivedAmount = (bills[billIndex].receivedAmount || 0) + paymentAmount;
-        bills[billIndex].balanceAmount = bills[billIndex].balanceAmount - paymentAmount;
-        bills[billIndex].status = bills[billIndex].balanceAmount <= 0 ? 'PAID' : 'PENDING';
-        bills[billIndex].lastPaymentDate = new Date().toISOString();
-    }
-    
-    // Add the balance payment record
-    bills.push(balancePayment);
-    localStorage.setItem('bills', JSON.stringify(bills));
-    
-    // Send Telegram notification
-    const telegramMessage = formatBalancePaymentForTelegram(balancePayment);
-    sendTelegramMessage(telegramMessage);
-    
-    // Close the modal and refresh the list
-    closeBillDetails();
-    loadAllPendingBills();
-    
-    alert(`Balance payment of ₹${paymentAmount.toFixed(2)} processed successfully!`);
-}
-
-function formatBalancePaymentForTelegram(payment) {
-    const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
-    const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString();
-
-    let message = `💰 *BALANCE PAYMENT RECEIVED*\n\n`;
-    message += `Original Estimate No: *${payment.originalBillNumber}*\n`;
-    message += `Payment Reference: *${payment.billNumber}*\n`;
-    message += `Original Date: ${formatDate(payment.originalBillDate)}\n`;
-    message += `Payment Date: ${formatDate(payment.paymentDate)}\n`;
-    message += `Payment Time: ${formatTime(payment.paymentDate)}\n\n`;
-
-    // Customer Details
-    message += `*CUSTOMER DETAILS*\n`;
-    message += `Name: ${payment.customer.name}\n`;
-    message += `Mobile: ${payment.customer.mobile}\n`;
-    message += `Address: ${payment.customer.address}\n\n`;
-
-    // Staff Details
-    message += `*STAFF DETAILS*\n`;
-    message += `Name: ${payment.staff.name}\n`;
-    message += `Role: ${payment.staff.role}\n\n`;
-
-    // Payment Summary
-    message += `*PAYMENT SUMMARY*\n`;
-    message += `Total Bill Amount: ₹${payment.totalAmount.toFixed(2)}\n`;
-    message += `Previous Received: ₹${payment.originalReceivedAmount.toFixed(2)}\n`;
-    message += `*Balance Payment: ₹${payment.balancePaymentAmount.toFixed(2)}*\n`;
-    message += `*Total Received: ₹${payment.receivedAmount.toFixed(2)}*\n`;
-    message += `*Remaining Balance: ₹${payment.balanceAmount.toFixed(2)}*\n`;
-    message += `*Payment Status: ${payment.status}*`;
-
-    return encodeURIComponent(message);
-}
-
-function closeBillDetails() {
-    document.getElementById('bill-details-modal').style.display = 'none';
-    currentPendingBill = null;
-    document.getElementById('balance-payment-amount').value = '';
-}
-
-// Add event listener for Enter key in search
-document.addEventListener('DOMContentLoaded', function() {
-    const pendingSearchInput = document.getElementById('pending-search');
-    if (pendingSearchInput) {
-        pendingSearchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchPendingBills();
-            }
-        });
-    }
-});
-
-function generateBalancePaymentPDF(payment) {
-    const template = `
-    <div id="bill-pdf-content" style="padding: 20px; font-family: 'Arial', sans-serif; width: 210mm; margin: auto;">
-        <!-- Header Section -->
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA RINGS</h1>
-            <p style="margin: 0px 0; font-size: 14px;">No. 3/6, Kannagi Street</p>
-            <p style="margin: 0px 0; font-size: 14px;">Periyar Salai, Ramapuram, 600089</p>
-            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9841447494</p>
-            <p style="margin: 0px 0; font-size: 14px;">Email: admin@srivinayagatraders.com</p>
-        </div>
-
-        <h1 style="font-size: 24px; text-align: center;">BALANCE PAYMENT RECEIPT</h1>
-
-        <!-- Bill Info Section -->
-        <div style="margin-bottom: 10px; padding-bottom: 2;">
-            <table style="width: 100%; font-size: 14px;">
-                <tr>
-                    <td style="width: 50%; text-align: center; border: 1px solid #535353;">
-                        <strong>Original Estimate No:</strong> ${payment.originalBillNumber}
-                    </td>
-                    <td style="width: 50%; text-align: center; border: 1px solid #535353;">
-                        <strong>Payment Reference:</strong> ${payment.billNumber}
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width: 33%; text-align: center; border: 1px solid #535353;">
-                        <strong>Original Date:</strong> ${new Date(payment.originalBillDate).toLocaleDateString()}
-                    </td>
-                    <td style="width: 33%; text-align: center; border: 1px solid #535353;">
-                        <strong>Payment Date:</strong> ${new Date(payment.paymentDate).toLocaleDateString()}
-                    </td>
-                </tr>                   
-            </table>
-        </div>
-
-        <!-- Customer Details -->
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
-            <div style="width: 100%; border: 1px solid #ffffff; padding: 2px; border-radius: 5px;">
-                <h3 style="margin: 0 0 2px 0; font-size: 16px; border-bottom: 1px solid #ffffff; padding-bottom: 2px;">Customer Details</h3>
-                <p style="margin: 1px 0;"><strong>Name:</strong> ${payment.customer.name}</p>
-                <p style="margin: 1px 0;"><strong>Mobile:</strong> ${payment.customer.mobile}</p>
-                <p style="margin: 1px 0;"><strong>Address:</strong> ${payment.customer.address}</p>
-            </div>
-        </div>
-
-        <!-- Payment Summary -->
-        <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 15px; font-size: 14px;">
-            <table style="width: 400px; border-collapse: collapse;">
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Original Bill Amount</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;">₹${payment.totalAmount.toFixed(2)}</td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Previously Received</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;">₹${payment.originalReceivedAmount.toFixed(2)}</td>
-                </tr>
-                <tr style="background-color: #e8f5e8;">
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Balance Payment (Today)</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>₹${payment.balancePaymentAmount.toFixed(2)}</strong></td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Total Received Amount</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>₹${payment.receivedAmount.toFixed(2)}</strong></td>
-                </tr>
-                <tr style="background-color: ${payment.balanceAmount > 0 ? '#ffebee' : '#e8f5e8'};">
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Remaining Balance</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>₹${payment.balanceAmount.toFixed(2)}</strong></td>
-                </tr>
-                <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>Payment Status</strong></td>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 5px 0;"><strong>${payment.status}</strong></td>
-                </tr>
-            </table>
-        </div>
-
-        <!-- Footer -->
-        <div style="margin-top: 30px; font-size: 14px;">
-            <div style="float: left; width: 50%;">
-                <p><strong>Payment received on:</strong> ${new Date(payment.paymentDate).toLocaleString()}</p>
-                <p style="margin-top: 20px;"><strong>Thank you for your payment!</strong></p>
-            </div>
-            <div style="float: right; width: 200px; text-align: center;">
-                <div style="margin-bottom: 40px;">
-                    <p style="margin-bottom: 50px;"></p>
-                    <p style="margin: 0;"><strong>Authorized Signature</strong></p>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
-
-    // Create temporary container
-    const container = document.createElement('div');
-    container.innerHTML = template;
-    document.body.appendChild(container);
-
-    // PDF options
-    const opt = {
-        filename: `Balance-Payment-${payment.billNumber}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2,
-            useCORS: true,
-            letterRendering: true
-        },
-        jsPDF: { 
-            unit: 'mm', 
-            format: 'a4', 
-            orientation: 'portrait'
-        },
-        margin: [10, 0, 10, 0]
-    };
-
-    // Generate PDF
-    html2pdf().from(container).set(opt).save()
-        .then(() => {
-            document.body.removeChild(container);
-        });
-}
 
 // Initialize brands and products list on page load
 window.addEventListener('load', () => {
