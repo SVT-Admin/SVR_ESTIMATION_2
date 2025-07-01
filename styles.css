@@ -121,16 +121,6 @@ nav button:hover {
     color: #1e7e34;
 }
 
-.status-badge.paid {
-    background-color: #e6f4ea;
-    color: #1e7e34;
-}
-
-.status-badge.pending {
-    background-color: #e6f4ea;
-    color: #1e7e34;
-}
-
 .status-badge.cancelled {
     background-color: #ffeef0;
     color: #dc3545;
@@ -518,6 +508,7 @@ button:active {
         flex-direction: column;
     }
 }
+
 
 /* Hamburger Navigation CSS */
 .hamburger {
