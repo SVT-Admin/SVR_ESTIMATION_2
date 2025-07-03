@@ -33,6 +33,7 @@ function loadStaffDropdown() {
         option.textContent = `${staff.name} (${staff.role})`;
         staffSelect.appendChild(option);
     });
+    initializeBillingDate();
 }
 
 function showSection(sectionName) {
@@ -1095,6 +1096,12 @@ styleSheet.textContent = `
 `;
 document.head.appendChild(styleSheet);
 
+function initializeBillingDate() {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    document.getElementById('billing-date').value = formattedDate;
+}
+
 function generateBill() {
     if (currentBillItems.length === 0) {
         alert('Please add items to the bill');
@@ -1112,6 +1119,12 @@ function generateBill() {
         return;
     }
 
+    const billingDate = document.getElementById('billing-date').value;
+    if (!billingDate) {
+        alert('Please select a billing date');
+        return;
+    }
+
     const staffList = JSON.parse(localStorage.getItem('staff')) || [];
     const staff = staffList.find(s => s.id == staffId);
 
@@ -1122,10 +1135,13 @@ function generateBill() {
     
     const grandTotal = subtotal + transportCharges + extraCharges;
 
+    // Use the selected date instead of current date
+    const selectedDate = new Date(billingDate);
+    
     const bill = {
         id: Date.now(),
         billNumber: billNumber,
-        date: new Date().toISOString(),
+        date: selectedDate.toISOString(), // Use selected date
         customer: customerInfo,
         staff: staff,
         items: currentBillItems.map(item => ({
@@ -1147,7 +1163,7 @@ function generateBill() {
     const telegramMessage = formatBillDetailsForTelegram(bill);
     sendTelegramMessage(telegramMessage);
 
-    // Clear form
+    // Clear form including date (reset to today)
     currentBillItems = [];
     document.getElementById('customer-name').value = '';
     document.getElementById('customer-mobile').value = '';
@@ -1155,6 +1171,7 @@ function generateBill() {
     document.getElementById('staff-select').value = '';
     document.getElementById('transport-charges').value = '';
     document.getElementById('extra-charges').value = '';
+    initializeBillingDate(); // Reset date to today
 
     updateBillItemsTable();
 
@@ -1598,5 +1615,6 @@ document.querySelectorAll('#start-date, #end-date').forEach(input => {
 window.addEventListener('load', () => {
     loadBrandsList();
     loadProductsList('');
-    generateReport(); // Automatically generate report on load
+    generateReport();
+    initializeBillingDate();
 });
