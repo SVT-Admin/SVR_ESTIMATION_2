@@ -1207,9 +1207,9 @@ function generateProfessionalBillPDF(bill) {
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA RINGS</h1>
-            <p style="margin: 0px 0; font-size: 14px;">No. 12/281, Puthantharuvai Road</p>
-            <p style="margin: 0px 0; font-size: 14px;">Panaivilai, Thisayanvilai, 628656</p>
-            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9710812345, +91 7598721234</p>
+            <p style="margin: 0px 0; font-size: 14px;">No. 48&49, Arakonam Road, Rajalakshmi Nagar,</p>
+            <p style="margin: 0px 0; font-size: 14px;">Part 2, Sriperumbudur, Thandalam - 602105</p>
+            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9841447494, +91 9514921234</p>
             <p style="margin: 0px 0; font-size: 14px;">Email: admin@srivinayagatraders.com</p>
         </div>
 
